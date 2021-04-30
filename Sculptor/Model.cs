@@ -7,19 +7,16 @@ using Sculptor.Utils;
 
 namespace Sculptor
 {
-    public abstract class Model
+    public abstract class Model<T> where T : Model<T>
     {
-        public string Table
-        {
-            get { return this.GetType().Name.Pluralize().ToSnakeCase(); }
-        }
+        public static string Table => typeof(T).Name.Pluralize().ToSnakeCase();
 
         public void Save()
         {
-            if (Convert.ToInt32(this.GetType().GetProperty("Id").GetValue(this)) == 0)
+            if (Convert.ToInt32(typeof(T).GetProperty("Id").GetValue(this)) == 0)
             {
                 Connection.Execute(CompileInsert().Query, CompileInsert().Parameters);
-                this.GetType().GetProperty("Id").SetValue(this, Connection.LastInsertId);
+                typeof(T).GetProperty("Id").SetValue(this, Connection.LastInsertId);
             }
             else
             {
@@ -29,10 +26,10 @@ namespace Sculptor
 
         public async Task SaveAsync()
         {
-            if (Convert.ToInt32(this.GetType().GetProperty("Id").GetValue(this)) == 0)
+            if (Convert.ToInt32(typeof(T).GetProperty("Id").GetValue(this)) == 0)
             {
                 await Connection.ExecuteAsync(CompileInsert().Query, CompileInsert().Parameters);
-                this.GetType().GetProperty("Id").SetValue(this, Connection.LastInsertId);
+                typeof(T).GetProperty("Id").SetValue(this, Connection.LastInsertId);
             }
             else
             {
@@ -62,7 +59,7 @@ namespace Sculptor
 
         private Dictionary<string, dynamic> GetParameters()
         {
-            PropertyInfo[] properties = this.GetType().GetProperties();
+            PropertyInfo[] properties = typeof(T).GetProperties();
             Dictionary<string, dynamic> parameters = new Dictionary<string, dynamic>();
 
             string[] bannedProperties = { "Id", "Table" };
