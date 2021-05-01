@@ -3,13 +3,56 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Sculptor.Exceptions;
 using Sculptor.Utils;
 
 namespace Sculptor
 {
-    public abstract class Model<T> where T : Model<T>
+    public abstract class Model<T> where T : Model<T>, new()
     {
         public static string Table => typeof(T).Name.Pluralize().ToSnakeCase();
+
+        public static T Find(int id)
+        {
+            List<Dictionary<string, dynamic>> results = Connection.Fetch(String.Format("SELECT * FROM {0} WHERE id = {1}", Table, id));
+
+            if (results.Count == 0)
+                throw new ModelNotFoundException();
+
+            return CreateModel(results.First());
+        }
+
+        public static async Task<T> FindAsync(int id)
+        {
+            List<Dictionary<string, dynamic>> results = await Connection.FetchAsync(String.Format("SELECT * FROM {0} WHERE id = {1}", Table, id));
+
+            if (results.Count == 0)
+                throw new ModelNotFoundException();
+
+            return CreateModel(results.First());
+        }
+
+        public static List<T> All()
+        {
+            List<Dictionary<string, dynamic>> results = Connection.Fetch(String.Format("SELECT * FROM {0}", Table));
+            List<T> models = new List<T>();
+
+            foreach (Dictionary<string, dynamic> result in results)
+                models.Add(CreateModel(result));
+
+            return models;
+        }
+
+        public static async Task<List<T>> AllAsync()
+        {
+            List<Dictionary<string, dynamic>> results = await Connection.FetchAsync(String.Format("SELECT * FROM {0}", Table));
+            List<T> models = new List<T>();
+
+            foreach (Dictionary<string, dynamic> result in results)
+                models.Add(CreateModel(result));
+
+            return models;
+        }
 
         public void Save()
         {
@@ -69,6 +112,22 @@ namespace Sculptor
                     parameters.Add(property.Name.ToSnakeCase(), property.GetValue(this));
 
             return parameters;
+        }
+
+        private static T CreateModel(Dictionary<string, dynamic> columns)
+        {
+            T model = new T();
+
+            foreach (var column in columns)
+            {
+                if (typeof(T).GetProperty(column.Key.ToPascalCase().UcFirst()) != null)
+                {
+                    var castedValue = Convert.ChangeType(column.Value, typeof(T).GetProperty(column.Key.ToPascalCase().UcFirst()).PropertyType);
+                    typeof(T).GetProperty(column.Key.ToPascalCase().UcFirst()).SetValue(model, castedValue);
+                }
+            }
+
+            return model;
         }
     }
 }
