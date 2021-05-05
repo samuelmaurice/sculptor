@@ -11,5 +11,6 @@
   <ItemGroup>
     <Folder Include="Utils\" />
     <Folder Include="Exceptions\" />
+    <Folder Include="Database\" />
   </ItemGroup>
 </Project>

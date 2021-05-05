@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using MySqlConnector;
 
-namespace Sculptor
+namespace Sculptor.Database
 {
     public static class Connection
     {
@@ -34,7 +34,7 @@ namespace Sculptor
             LastInsertId = Convert.ToInt32(command.LastInsertedId);
         }
 
-        public static List<Dictionary<string, dynamic>> Fetch(string query, Dictionary<string, dynamic> parameters = null)
+        public static List<ResultRow<T>> Fetch<T>(string query, Dictionary<string, dynamic> parameters = null) where T : Model<T>, new()
         {
             using var connection = new MySqlConnection(ConnectionString);
             connection.Open();
@@ -43,22 +43,22 @@ namespace Sculptor
             BindParameters(command, parameters);
 
             using var reader = command.ExecuteReader();
-            List<Dictionary<string, dynamic>> results = new List<Dictionary<string, dynamic>>();
+            List<ResultRow<T>> resultSet = new List<ResultRow<T>>();
 
             while (reader.Read())
             {
-                Dictionary<string, dynamic> result = new Dictionary<string, dynamic>();
+                ResultRow<T> resultRow = new ResultRow<T>();
 
                 for (int column = 0; column < reader.FieldCount; column++)
-                    result.Add(reader.GetName(column), reader.GetValue(column));
+                    resultRow.Columns.Add(reader.GetName(column), reader.GetValue(column));
 
-                results.Add(result);
+                resultSet.Add(resultRow);
             }
 
-            return results;
+            return resultSet;
         }
 
-        public static async Task<List<Dictionary<string, dynamic>>> FetchAsync(string query, Dictionary<string, dynamic> parameters = null)
+        public static async Task<List<ResultRow<T>>> FetchAsync<T>(string query, Dictionary<string, dynamic> parameters = null) where T : Model<T>, new()
         {
             using var connection = new MySqlConnection(ConnectionString);
             await connection.OpenAsync();
@@ -67,19 +67,19 @@ namespace Sculptor
             BindParameters(command, parameters);
 
             using var reader = await command.ExecuteReaderAsync();
-            List<Dictionary<string, dynamic>> results = new List<Dictionary<string, dynamic>>();
+            List<ResultRow<T>> resultSet = new List<ResultRow<T>>();
 
             while (await reader.ReadAsync())
             {
-                Dictionary<string, dynamic> result = new Dictionary<string, dynamic>();
+                ResultRow<T> resultRow = new ResultRow<T>();
 
                 for (int column = 0; column < reader.FieldCount; column++)
-                    result.Add(reader.GetName(column), reader.GetValue(column));
+                    resultRow.Columns.Add(reader.GetName(column), reader.GetValue(column));
 
-                results.Add(result);
+                resultSet.Add(resultRow);
             }
 
-            return results;
+            return resultSet;
         }
 
         private static void BindParameters(MySqlCommand command, Dictionary<string, dynamic> parameters = null)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Sculptor.Database;
 using Sculptor.Exceptions;
 using Sculptor.Utils;
 
@@ -14,44 +15,36 @@ namespace Sculptor
 
         public static T Find(int id)
         {
-            List<Dictionary<string, dynamic>> results = Connection.Fetch(String.Format("SELECT * FROM {0} WHERE id = {1}", Table, id));
+            List<ResultRow<T>> resultSet = Connection.Fetch<T>(String.Format("SELECT * FROM {0} WHERE id = {1}", Table, id));
 
-            if (results.Count == 0)
+            if (resultSet.Count == 0)
                 throw new ModelNotFoundException();
 
-            return CreateModel(results.First());
+            return resultSet.First().Model;
         }
 
         public static async Task<T> FindAsync(int id)
         {
-            List<Dictionary<string, dynamic>> results = await Connection.FetchAsync(String.Format("SELECT * FROM {0} WHERE id = {1}", Table, id));
+            List<ResultRow<T>> resultSet = await Connection.FetchAsync<T>(String.Format("SELECT * FROM {0} WHERE id = {1}", Table, id));
 
-            if (results.Count == 0)
+            if (resultSet.Count == 0)
                 throw new ModelNotFoundException();
 
-            return CreateModel(results.First());
+            return resultSet.First().Model;
         }
 
         public static List<T> All()
         {
-            List<Dictionary<string, dynamic>> results = Connection.Fetch(String.Format("SELECT * FROM {0}", Table));
-            List<T> models = new List<T>();
+            List<ResultRow<T>> resultSet = Connection.Fetch<T>(String.Format("SELECT * FROM {0}", Table));
 
-            foreach (Dictionary<string, dynamic> result in results)
-                models.Add(CreateModel(result));
-
-            return models;
+            return resultSet.Select(r => r.Model).ToList();
         }
 
         public static async Task<List<T>> AllAsync()
         {
-            List<Dictionary<string, dynamic>> results = await Connection.FetchAsync(String.Format("SELECT * FROM {0}", Table));
-            List<T> models = new List<T>();
+            List<ResultRow<T>> resultSet = await Connection.FetchAsync<T>(String.Format("SELECT * FROM {0}", Table));
 
-            foreach (Dictionary<string, dynamic> result in results)
-                models.Add(CreateModel(result));
-
-            return models;
+            return resultSet.Select(r => r.Model).ToList();
         }
 
         public void Save()
@@ -112,22 +105,6 @@ namespace Sculptor
                     parameters.Add(property.Name.ToSnakeCase(), property.GetValue(this));
 
             return parameters;
-        }
-
-        private static T CreateModel(Dictionary<string, dynamic> columns)
-        {
-            T model = new T();
-
-            foreach (var column in columns)
-            {
-                if (typeof(T).GetProperty(column.Key.ToPascalCase().UcFirst()) != null)
-                {
-                    var castedValue = Convert.ChangeType(column.Value, typeof(T).GetProperty(column.Key.ToPascalCase().UcFirst()).PropertyType);
-                    typeof(T).GetProperty(column.Key.ToPascalCase().UcFirst()).SetValue(model, castedValue);
-                }
-            }
-
-            return model;
         }
     }
 }
