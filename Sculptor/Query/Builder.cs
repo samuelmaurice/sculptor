@@ -3,31 +3,36 @@ using System.Collections.Generic;
 using System.Linq;
 using Sculptor.Database;
 using Sculptor.Exceptions;
+using Sculptor.Query.Grammars;
 
 namespace Sculptor.Query
 {
     public class Builder<T> where T : Model<T>, new()
     {
-        private List<WhereClause> _wheres = new List<WhereClause>();
+        public string[] Columns { get; } = new string[] { "*" };
+        public string From { get; } = Model<T>.Table;
+        public List<WhereClause> Wheres { get; } = new List<WhereClause>();
+        public int Limit { get; private set; }
 
         public Builder<T> Where(string column, dynamic value)
         {
-            _wheres.Add(new WhereClause(column, "=", value));
+            Wheres.Add(new WhereClause(column, "=", value));
 
             return this;
         }
 
         public Builder<T> Where(string column, string ope, dynamic value)
         {
-            _wheres.Add(new WhereClause(column, ope, value));
+            Wheres.Add(new WhereClause(column, ope, value));
 
             return this;
         }
 
         public T First()
         {
-            Console.WriteLine(string.Join(" AND ", _wheres));
-            List<ResultRow<T>> resultSet = Connection.Fetch<T>(string.Format("SELECT * FROM {0} WHERE {1} LIMIT 1", Model<T>.Table, string.Join(" AND ", _wheres)));
+            Limit = 1;
+
+            List<ResultRow<T>> resultSet = Connection.Fetch<T>(Grammar.CompileSelect(this));
 
             if (resultSet.Count == 0)
                 throw new ModelNotFoundException();
@@ -37,7 +42,7 @@ namespace Sculptor.Query
 
         public List<T> Get()
         {
-            List<ResultRow<T>> resultSet = Connection.Fetch<T>(String.Format("SELECT * FROM {0} WHERE {1}", Model<T>.Table, string.Join(" AND ", _wheres)));
+            List<ResultRow<T>> resultSet = Connection.Fetch<T>(Grammar.CompileSelect(this));
 
             return resultSet.Select(r => r.Model).ToList();
         }

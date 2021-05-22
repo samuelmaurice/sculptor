@@ -13,5 +13,6 @@
     <Folder Include="Exceptions\" />
     <Folder Include="Database\" />
     <Folder Include="Query\" />
+    <Folder Include="Query\Grammars\" />
   </ItemGroup>
 </Project>
