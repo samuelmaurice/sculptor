@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Sculptor.Database;
 using Sculptor.Exceptions;
+using Sculptor.Query;
 using Sculptor.Utils;
 
 namespace Sculptor
@@ -12,6 +13,7 @@ namespace Sculptor
     public abstract class Model<T> where T : Model<T>, new()
     {
         public static string Table => typeof(T).Name.Pluralize().ToSnakeCase();
+        public static Builder<T> Query => new Builder<T>();
 
         public static T Find(int id)
         {
