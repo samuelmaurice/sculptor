@@ -40,6 +40,9 @@ namespace Sculptor.Query.Grammars
         /// <returns>The compiled "select" portion.</returns>
         private static string CompileColumns(dynamic columns)
         {
+            if (columns is null)
+                columns = new string[] { "*" };
+
             return string.Format("SELECT {0}", string.Join(", ", columns));
         }
 

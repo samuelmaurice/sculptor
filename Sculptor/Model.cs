@@ -13,7 +13,7 @@ namespace Sculptor
     public abstract class Model<T> where T : Model<T>, new()
     {
         public static string Table => typeof(T).Name.Pluralize().ToSnakeCase();
-        public static Builder<T> Query => new Builder<T>();
+        public static Builder<T> Query => Builder<T>.Query(Table);
 
         public static T Find(int id)
         {

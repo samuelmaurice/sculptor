@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Sculptor.Database;
 using Sculptor.Exceptions;
 using Sculptor.Query.Grammars;
@@ -9,11 +9,52 @@ namespace Sculptor.Query
 {
     public class Builder<T> where T : Model<T>, new()
     {
-        public string[] Columns { get; } = new string[] { "*" };
-        public string From { get; } = Model<T>.Table;
-        public List<WhereClause> Wheres { get; } = new List<WhereClause>();
+        /// <summary>
+        /// The columns that should be returned.
+        /// </summary>
+        public string[] Columns { get; private set; }
+
+        /// <summary>
+        /// The table which the query is targeting.
+        /// </summary>
+        public string From { get; private set; }
+
+        /// <summary>
+        /// The where constraints for the query.
+        /// </summary>
+        public List<WhereClause> Wheres { get; private set; }
+
+        /// <summary>
+        /// The maximum number of records to return.
+        /// </summary>
         public int Limit { get; private set; }
 
+        /// <summary>
+        /// Create a new instance of the query builder.
+        /// </summary>
+        /// <param name="table">The table which the query is targeting.</param>
+        private Builder(string table)
+        {
+            From = table;
+            Wheres = new List<WhereClause>();
+        }
+
+        /// <summary>
+        /// Get a new instance of the query builder.
+        /// </summary>
+        /// <param name="table">The table which the query is targeting.</param>
+        /// <returns>The current query.</returns>
+        public static Builder<T> Query(string table)
+        {
+            return new Builder<T>(table);
+        }
+
+        /// <summary>
+        /// Add a basic where clause to the query.
+        /// </summary>
+        /// <param name="column">The column to which the clause applies.</param>
+        /// <param name="value">The value of the clause.</param>
+        /// <returns>The current query.</returns>
         public Builder<T> Where(string column, dynamic value)
         {
             Wheres.Add(new WhereClause(column, "=", value));
@@ -21,18 +62,26 @@ namespace Sculptor.Query
             return this;
         }
 
-        public Builder<T> Where(string column, string ope, dynamic value)
+        /// <summary>
+        /// Set the "limit" value of the query.
+        /// </summary>
+        /// <param name="limit">The maximum number of records to return.</param>
+        /// <returns>The current query.</returns>
+        public Builder<T> Take(int limit)
         {
-            Wheres.Add(new WhereClause(column, ope, value));
+            if (limit > 0)
+                Limit = limit;
 
             return this;
         }
 
+        /// <summary>
+        /// Execute the query and get the first result or throw an exception.
+        /// </summary>
+        /// <returns>An instance of the hydrated model.</returns>
         public T First()
         {
-            Limit = 1;
-
-            List<ResultRow<T>> resultSet = Connection.Fetch<T>(Grammar.CompileSelect(this));
+            List<ResultRow<T>> resultSet = Connection.Fetch<T>(Grammar.CompileSelect(this.Take(1)));
 
             if (resultSet.Count == 0)
                 throw new ModelNotFoundException();
@@ -40,9 +89,38 @@ namespace Sculptor.Query
             return resultSet.First().Model;
         }
 
+        /// <summary>
+        /// Execute the query asynchronously and get the first result or throw an exception.
+        /// </summary>
+        /// <returns>An instance of the hydrated model.</returns>
+        public async Task<T> FirstAsync()
+        {
+            List<ResultRow<T>> resultSet = await Connection.FetchAsync<T>(Grammar.CompileSelect(this.Take(1)));
+
+            if (resultSet.Count == 0)
+                throw new ModelNotFoundException();
+
+            return resultSet.First().Model;
+        }
+
+        /// <summary>
+        /// Execute the query as a "select" statement.
+        /// </summary>
+        /// <returns>A list of hydrated models.</returns>
         public List<T> Get()
         {
             List<ResultRow<T>> resultSet = Connection.Fetch<T>(Grammar.CompileSelect(this));
+
+            return resultSet.Select(r => r.Model).ToList();
+        }
+
+        /// <summary>
+        /// Execute the query asynchronously as a "select" statement.
+        /// </summary>
+        /// <returns>A list of hydrated models.</returns>
+        public async Task<List<T>> GetAsync()
+        {
+            List<ResultRow<T>> resultSet = await Connection.FetchAsync<T>(Grammar.CompileSelect(this));
 
             return resultSet.Select(r => r.Model).ToList();
         }
