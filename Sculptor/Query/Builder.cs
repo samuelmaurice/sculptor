@@ -50,6 +50,18 @@ namespace Sculptor.Query
         }
 
         /// <summary>
+        /// Set the columns to be selected.
+        /// </summary>
+        /// <param name="columns">The columns that should be returned.</param>
+        /// <returns>The current query.</returns>
+        public Builder<T> Select(params string[] columns)
+        {
+            Columns = columns;
+
+            return this;
+        }
+
+        /// <summary>
         /// Add a basic where clause to the query.
         /// </summary>
         /// <param name="column">The column to which the clause applies.</param>
