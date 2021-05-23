@@ -93,7 +93,7 @@ namespace Sculptor.Query
         /// <returns>An instance of the hydrated model.</returns>
         public T First()
         {
-            List<ResultRow<T>> resultSet = Connection.Fetch<T>(Grammar.CompileSelect(this.Take(1)));
+            List<ResultRow<T>> resultSet = Connection.Fetch<T>(Grammar.CompileSelect(this.Take(1)), GetParameters());
 
             if (resultSet.Count == 0)
                 throw new ModelNotFoundException();
@@ -107,7 +107,7 @@ namespace Sculptor.Query
         /// <returns>An instance of the hydrated model.</returns>
         public async Task<T> FirstAsync()
         {
-            List<ResultRow<T>> resultSet = await Connection.FetchAsync<T>(Grammar.CompileSelect(this.Take(1)));
+            List<ResultRow<T>> resultSet = await Connection.FetchAsync<T>(Grammar.CompileSelect(this.Take(1)), GetParameters());
 
             if (resultSet.Count == 0)
                 throw new ModelNotFoundException();
@@ -121,7 +121,7 @@ namespace Sculptor.Query
         /// <returns>A list of hydrated models.</returns>
         public List<T> Get()
         {
-            List<ResultRow<T>> resultSet = Connection.Fetch<T>(Grammar.CompileSelect(this));
+            List<ResultRow<T>> resultSet = Connection.Fetch<T>(Grammar.CompileSelect(this), GetParameters());
 
             return resultSet.Select(r => r.Model).ToList();
         }
@@ -132,9 +132,63 @@ namespace Sculptor.Query
         /// <returns>A list of hydrated models.</returns>
         public async Task<List<T>> GetAsync()
         {
-            List<ResultRow<T>> resultSet = await Connection.FetchAsync<T>(Grammar.CompileSelect(this));
+            List<ResultRow<T>> resultSet = await Connection.FetchAsync<T>(Grammar.CompileSelect(this), GetParameters());
 
             return resultSet.Select(r => r.Model).ToList();
+        }
+
+        /// <summary>
+        /// Insert a new record and get the value of the primary key.
+        /// </summary>
+        /// <param name="values">The values of the new record.</param>
+        /// <returns>The value of the primary key.</returns>
+        public int Insert(Dictionary<string, dynamic> values)
+        {
+            Connection.Execute(Grammar.CompileInsert(this, values), values);
+
+            return Connection.LastInsertId;
+        }
+
+        /// <summary>
+        /// Insert a new record asynchronously and get the value of the primary key.
+        /// </summary>
+        /// <param name="values">The values of the new record.</param>
+        /// <returns>The value of the primary key.</returns>
+        public async Task<int> InsertAsync(Dictionary<string, dynamic> values)
+        {
+            await Connection.ExecuteAsync(Grammar.CompileInsert(this, values), values);
+
+            return Connection.LastInsertId;
+        }
+
+        /// <summary>
+        /// Update records in the database.
+        /// </summary>
+        /// <param name="values">The columns to update.</param>
+        public void Update(Dictionary<string, dynamic> values)
+        {
+            Connection.Execute(Grammar.CompileUpdate(this, values), GetParameters(values));
+        }
+
+        /// <summary>
+        /// Asynchronously update records in the database.
+        /// </summary>
+        /// <param name="values">The columns to update.</param>
+        public async Task UpdateAsync(Dictionary<string, dynamic> values)
+        {
+            await Connection.ExecuteAsync(Grammar.CompileUpdate(this, values), GetParameters(values));
+        }
+
+        /// <summary>
+        /// Build a list of parameters including the where clauses.
+        /// </summary>
+        /// <returns>A collection of columns and values.</returns>
+        private Dictionary<string, dynamic> GetParameters(Dictionary<string, dynamic> values = null)
+        {
+            Dictionary<string, dynamic> parameters = values is null ? new Dictionary<string, dynamic>() : values;
+            Wheres.ForEach(w => parameters.Add(w.Column, w.Value));
+
+            return parameters;
         }
     }
 }

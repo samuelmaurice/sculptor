@@ -28,7 +28,7 @@ namespace Sculptor.Query.Grammars
             List<string> sql = new List<string>();
 
             foreach (var component in _components)
-                sql.Add(component.Value.Invoke(query.GetType().GetProperty(component.Key).GetValue(query, null)));
+                sql.Add(component.Value.Invoke(query.GetType().GetProperty(component.Key).GetValue(query)));
 
             return string.Join(" ", sql);
         }
@@ -66,7 +66,7 @@ namespace Sculptor.Query.Grammars
             List<WhereClause> whereClauses = (List<WhereClause>) wheres;
 
             if (whereClauses.Any())
-                return string.Format("WHERE {0}", string.Join(" AND ", whereClauses)); // To-Do: Parameterize values
+                return string.Format("WHERE {0}", string.Join(" AND ", whereClauses));
 
             return "";
         }
@@ -82,6 +82,43 @@ namespace Sculptor.Query.Grammars
                 return string.Format("LIMIT {0}", limit);
 
             return "";
+        }
+
+        /// <summary>
+        /// Compile an insert statement into SQL.
+        /// </summary>
+        /// <typeparam name="T">The model on which the query is performed.</typeparam>
+        /// <param name="query">The query builder instance.</param>
+        /// <param name="values">The values to insert.</param>
+        /// <returns>The compiled insert query.</returns>
+        public static string CompileInsert<T>(Builder<T> query, Dictionary<string, dynamic> values) where T : Model<T>, new()
+        {
+            string columns = string.Join(", ", values.Keys);
+            string parameters = string.Join(", ", values.Select(v => "@" + v.Key));
+
+            return string.Format("INSERT INTO {0} ({1}) VALUES ({2})", query.From, columns, parameters);
+        }
+
+        /// <summary>
+        /// Compile an update statement into SQL.
+        /// </summary>
+        /// <typeparam name="T">The model on which the query is performed.</typeparam>
+        /// <param name="query">The query builder instance.</param>
+        /// <param name="values">The columns to update.</param>
+        /// <returns>The compiled update query.</returns>
+        public static string CompileUpdate<T>(Builder<T> query, Dictionary<string, dynamic> values) where T : Model<T>, new()
+        {
+            return string.Format("UPDATE {0} SET {1} {2}", query.From, CompileUpdateColumns(values), CompileWheres(query.Wheres));
+        }
+
+        /// <summary>
+        /// Compile the columns for an update statement.
+        /// </summary>
+        /// <param name="values">The columns to update.</param>
+        /// <returns>The compiled "set" portion.</returns>
+        private static string CompileUpdateColumns(Dictionary<string, dynamic> values)
+        {
+            return string.Join(", ", values.Select(v => string.Format("{0} = @{0}", v.Key)));
         }
     }
 }

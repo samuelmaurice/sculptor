@@ -6,6 +6,9 @@
         private readonly string _operator;
         private readonly dynamic _value;
 
+        public string Column => _column;
+        public dynamic Value => _value;
+
         public WhereClause(string column, string ope, dynamic value)
         {
             _column = column;
@@ -15,7 +18,7 @@
 
         public override string ToString()
         {
-            return string.Format("{0} {1} '{2}'", _column, _operator, _value);
+            return string.Format("{0} {1} @{0}", _column, _operator);
         }
     }
 }

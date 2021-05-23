@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Sculptor.Database;
-using Sculptor.Exceptions;
 using Sculptor.Query;
 using Sculptor.Utils;
 
@@ -12,95 +10,132 @@ namespace Sculptor
 {
     public abstract class Model<T> where T : Model<T>, new()
     {
+        /// <summary>
+        /// The table associated with the model.
+        /// </summary>
         public static string Table => typeof(T).Name.Pluralize().ToSnakeCase();
+
+        /// <summary>
+        /// The primary key of the model.
+        /// </summary>
+        private int PrimaryKey
+        {
+            get { return Convert.ToInt32(typeof(T).GetProperty("Id").GetValue(this)); }
+            set { typeof(T).GetProperty("Id").SetValue(this, value); }
+        }
+
+        /// <summary>
+        /// Indicates if the model exists.
+        /// </summary>
+        public bool Exists => Convert.ToBoolean(typeof(T).GetProperty("Id").GetValue(this));
+
+        /// <summary>
+        /// Get a new query builder instance for the model.
+        /// </summary>
         public static Builder<T> Query => Builder<T>.Query(Table);
 
+        /// <summary>
+        /// Find a model by its primary key.
+        /// </summary>
+        /// <param name="id">The value of the primary key.</param>
+        /// <returns>An instance of the hydrated model.</returns>
         public static T Find(int id)
         {
-            List<ResultRow<T>> resultSet = Connection.Fetch<T>(String.Format("SELECT * FROM {0} WHERE id = {1}", Table, id));
-
-            if (resultSet.Count == 0)
-                throw new ModelNotFoundException();
-
-            return resultSet.First().Model;
+            return Query.Where("id", id).First();
         }
 
+        /// <summary>
+        /// Asynchronously find a model by its primary key.
+        /// </summary>
+        /// <param name="id">The value of the primary key.</param>
+        /// <returns>An instance of the hydrated model.</returns>
         public static async Task<T> FindAsync(int id)
         {
-            List<ResultRow<T>> resultSet = await Connection.FetchAsync<T>(String.Format("SELECT * FROM {0} WHERE id = {1}", Table, id));
-
-            if (resultSet.Count == 0)
-                throw new ModelNotFoundException();
-
-            return resultSet.First().Model;
+            return await Query.Where("id", id).FirstAsync();
         }
 
+        /// <summary>
+        /// Get all of the models from the database.
+        /// </summary>
+        /// <returns>A list of hydrated models.</returns>
         public static List<T> All()
         {
-            List<ResultRow<T>> resultSet = Connection.Fetch<T>(String.Format("SELECT * FROM {0}", Table));
-
-            return resultSet.Select(r => r.Model).ToList();
+            return Query.Get();
         }
 
+        /// <summary>
+        /// Asynchronously get all of the models from the database.
+        /// </summary>
+        /// <returns>A list of hydrated models.</returns>
         public static async Task<List<T>> AllAsync()
         {
-            List<ResultRow<T>> resultSet = await Connection.FetchAsync<T>(String.Format("SELECT * FROM {0}", Table));
-
-            return resultSet.Select(r => r.Model).ToList();
+            return await Query.GetAsync();
         }
 
+        /// <summary>
+        /// Save the model to the database.
+        /// </summary>
         public void Save()
         {
-            if (Convert.ToInt32(typeof(T).GetProperty("Id").GetValue(this)) == 0)
-            {
-                Connection.Execute(CompileInsert().Query, CompileInsert().Parameters);
-                typeof(T).GetProperty("Id").SetValue(this, Connection.LastInsertId);
-            }
+            if (Exists)
+                PerformUpdate();
             else
-            {
-                Connection.Execute(CompileUpdate().Query, CompileUpdate().Parameters);
-            }
+                PerformInsert();
         }
 
+        /// <summary>
+        /// Asynchronously save the model to the database.
+        /// </summary>
         public async Task SaveAsync()
         {
-            if (Convert.ToInt32(typeof(T).GetProperty("Id").GetValue(this)) == 0)
-            {
-                await Connection.ExecuteAsync(CompileInsert().Query, CompileInsert().Parameters);
-                typeof(T).GetProperty("Id").SetValue(this, Connection.LastInsertId);
-            }
+            if (Exists)
+                await PerformUpdateAsync();
             else
-            {
-                await Connection.ExecuteAsync(CompileUpdate().Query, CompileUpdate().Parameters);
-            }
+                await PerformInsertAsync();
         }
 
-        private (string Query, Dictionary<string, dynamic> Parameters) CompileInsert()
+        /// <summary>
+        /// Perform a model insert operation.
+        /// </summary>
+        private void PerformInsert()
         {
-            Dictionary<string, dynamic> parameters = GetParameters();
-
-            string columns = String.Join(", ", parameters.Keys);
-            string values = String.Join(", ", parameters.Select(p => "@" + p.Key));
-
-            return (String.Format("INSERT INTO {0} ({1}) VALUES ({2})", Table, columns, values), parameters);
+            PrimaryKey = Query.Insert(GetParameters());
         }
 
-        private (string Query, Dictionary<string, dynamic> Parameters) CompileUpdate()
+        /// <summary>
+        /// Perform a model insert operation asynchronously.
+        /// </summary>
+        private async Task PerformInsertAsync()
         {
-            Dictionary<string, dynamic> parameters = GetParameters();
-
-            string columns = String.Join(", ", parameters.Select(p => String.Format("{0} = @{0}", p.Key)));
-            int id = Convert.ToInt32(this.GetType().GetProperty("Id").GetValue(this));
-
-            return (String.Format("UPDATE {0} SET {1} WHERE id = {2}", Table, columns, id), parameters);
+            PrimaryKey = await Query.InsertAsync(GetParameters());
         }
 
+        /// <summary>
+        /// Perform a model update operation.
+        /// </summary>
+        private void PerformUpdate()
+        {
+            Query.Where("id", PrimaryKey).Update(GetParameters());
+        }
+
+        /// <summary>
+        /// Perform a model update operation asynchronously.
+        /// </summary>
+        private async Task PerformUpdateAsync()
+        {
+            await Query.Where("id", PrimaryKey).UpdateAsync(GetParameters());
+        }
+
+        /// <summary>
+        /// Build a list of parameters.
+        /// </summary>
+        /// <returns>A collection of columns and values.</returns>
         private Dictionary<string, dynamic> GetParameters()
         {
             PropertyInfo[] properties = typeof(T).GetProperties();
             Dictionary<string, dynamic> parameters = new Dictionary<string, dynamic>();
 
-            string[] bannedProperties = { "Id", "Table" };
+            string[] bannedProperties = { "Id", "Table", "PrimaryKey", "Exists", "Query" };
 
             foreach (var property in properties)
                 if (!bannedProperties.Any(property.Name.Contains))
