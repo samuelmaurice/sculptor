@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Sculptor.Query.Grammars
 {
@@ -66,7 +67,7 @@ namespace Sculptor.Query.Grammars
             List<WhereClause> whereClauses = (List<WhereClause>) wheres;
 
             if (whereClauses.Any())
-                return string.Format("WHERE {0}", string.Join(" AND ", whereClauses));
+                return string.Format("WHERE {0}", RemoveLeadingBoolean(string.Join(" ", whereClauses)));
 
             return "";
         }
@@ -119,6 +120,15 @@ namespace Sculptor.Query.Grammars
         private static string CompileUpdateColumns(Dictionary<string, dynamic> values)
         {
             return string.Join(", ", values.Select(v => string.Format("{0} = @{0}", v.Key)));
+        }
+
+        /// <summary>
+        /// Remove the leading boolean from a statement.
+        /// </summary>
+        /// <returns>The statement without the leading boolean.</returns>
+        private static string RemoveLeadingBoolean(string value)
+        {
+            return new Regex("AND |OR ", RegexOptions.IgnoreCase).Replace(value, "", 1);
         }
     }
 }

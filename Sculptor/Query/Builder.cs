@@ -66,12 +66,51 @@ namespace Sculptor.Query
         /// </summary>
         /// <param name="column">The column to which the clause applies.</param>
         /// <param name="value">The value of the clause.</param>
+        /// <param name="boolean">The boolean that applies for the where clause.</param>
         /// <returns>The current query.</returns>
-        public Builder<T> Where(string column, dynamic value)
+        public Builder<T> Where(string column, dynamic value, string boolean = "AND")
         {
-            Wheres.Add(new WhereClause(column, "=", value));
+            Wheres.Add(new WhereClause(column, "=", value, boolean));
 
             return this;
+        }
+
+        /// <summary>
+        /// Add a basic where clause with a custom operator to the query.
+        /// </summary>
+        /// <param name="column">The column to which the clause applies.</param>
+        /// <param name="ope">The operator for the where clause.</param>
+        /// <param name="value">The value of the clause.</param>
+        /// <param name="boolean">The boolean that applies for the where clause.</param>
+        /// <returns>The current query.</returns>
+        public Builder<T> Where(string column, string ope, dynamic value, string boolean = "AND")
+        {
+            Wheres.Add(new WhereClause(column, ope, value, boolean));
+
+            return this;
+        }
+
+        /// <summary>
+        /// Add an "or where" clause to the query.
+        /// </summary>
+        /// <param name="column">The column to which the clause applies.</param>
+        /// <param name="value">The value of the clause.</param>
+        /// <returns>The current query.</returns>
+        public Builder<T> OrWhere(string column, dynamic value)
+        {
+            return this.Where(column, value, "OR");
+        }
+
+        /// <summary>
+        /// Add an "or where" clause with a custom operator to the query.
+        /// </summary>
+        /// <param name="column">The column to which the clause applies.</param>
+        /// <param name="ope">The operator for the where clause.</param>
+        /// <param name="value">The value of the clause.</param>
+        /// <returns>The current query.</returns>
+        public Builder<T> OrWhere(string column, string ope, dynamic value)
+        {
+            return this.Where(column, ope, value, "OR");
         }
 
         /// <summary>
