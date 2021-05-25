@@ -1,32 +1,57 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Sculptor.Utils;
 
 namespace Sculptor.Database
 {
     public class ResultRow<T> where T : Model<T>, new()
     {
-        private readonly T _model = new T();
-        public Dictionary<string, dynamic> Columns { get; } = new Dictionary<string, dynamic>();
-        public T Model { get => Initialize(); }
+        /// <summary>
+        /// The columns for the row.
+        /// </summary>
+        public Dictionary<string, dynamic> Columns { get; private set; } = new Dictionary<string, dynamic>();
 
-        private T Initialize()
+        /// <summary>
+        /// The model related to the row.
+        /// </summary>
+        public T Model { get; private set; }
+
+        /// <summary>
+        /// Initialize and hydrate the model.
+        /// </summary>
+        /// <returns>An instance of the hydrated model.</returns>
+        public T Hydrate()
         {
-            foreach (KeyValuePair<string, dynamic> column in Columns)
-                if (typeof(T).GetProperty(GetPropertyName(column.Key)) != null)
-                    SetProperty(GetPropertyName(column.Key), column.Value);
+            Model = new T();
 
-            return _model;
+            foreach (var column in Columns)
+                if (HasProperty(column.Key))
+                    SetProperty(column.Key, column.Value);
+
+            return Model;
         }
 
-        private string GetPropertyName(string column)
+        /// <summary>
+        /// Check if the model has the given property.
+        /// </summary>
+        /// <param name="property">The name of the property.</param>
+        /// <returns>True if the model has it, false otherwise.</returns>
+        private bool HasProperty(string property)
         {
-            return column.ToPascalCase().UcFirst();
+            return typeof(T).GetProperty(property.ToPascalCase().UcFirst()) != null;
         }
 
-        private void SetProperty(string property, dynamic value)
+        /// <summary>
+        /// Set the given property on the model.
+        /// </summary>
+        /// <param name="column">The name of the property.</param>
+        /// <param name="value">The value for the property.</param>
+        private void SetProperty(string column, dynamic value)
         {
-            typeof(T).GetProperty(property).SetValue(_model, Convert.ChangeType(value, typeof(T).GetProperty(property).PropertyType));
+            PropertyInfo property = typeof(T).GetProperty(column.ToPascalCase().UcFirst());
+
+            property.SetValue(Model, Convert.ChangeType(value, property.PropertyType));
         }
     }
 }

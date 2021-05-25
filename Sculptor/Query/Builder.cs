@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Sculptor.Database;
 using Sculptor.Exceptions;
@@ -132,12 +131,12 @@ namespace Sculptor.Query
         /// <returns>An instance of the hydrated model.</returns>
         public T First()
         {
-            List<ResultRow<T>> resultSet = Connection.Fetch<T>(Grammar.CompileSelect(this.Take(1)), GetParameters());
+            ResultSet<T> resultSet = Connection.Fetch<T>(Grammar.CompileSelect(this.Take(1)), GetParameters());
 
-            if (resultSet.Count == 0)
+            if (resultSet.Rows.Count == 0)
                 throw new ModelNotFoundException();
 
-            return resultSet.First().Model;
+            return resultSet.First();
         }
 
         /// <summary>
@@ -146,12 +145,12 @@ namespace Sculptor.Query
         /// <returns>An instance of the hydrated model.</returns>
         public async Task<T> FirstAsync()
         {
-            List<ResultRow<T>> resultSet = await Connection.FetchAsync<T>(Grammar.CompileSelect(this.Take(1)), GetParameters());
+            ResultSet<T> resultSet = await Connection.FetchAsync<T>(Grammar.CompileSelect(this.Take(1)), GetParameters());
 
-            if (resultSet.Count == 0)
+            if (resultSet.Rows.Count == 0)
                 throw new ModelNotFoundException();
 
-            return resultSet.First().Model;
+            return resultSet.First();
         }
 
         /// <summary>
@@ -160,9 +159,9 @@ namespace Sculptor.Query
         /// <returns>A list of hydrated models.</returns>
         public List<T> Get()
         {
-            List<ResultRow<T>> resultSet = Connection.Fetch<T>(Grammar.CompileSelect(this), GetParameters());
+            ResultSet<T> resultSet = Connection.Fetch<T>(Grammar.CompileSelect(this), GetParameters());
 
-            return resultSet.Select(r => r.Model).ToList();
+            return resultSet.All();
         }
 
         /// <summary>
@@ -171,9 +170,9 @@ namespace Sculptor.Query
         /// <returns>A list of hydrated models.</returns>
         public async Task<List<T>> GetAsync()
         {
-            List<ResultRow<T>> resultSet = await Connection.FetchAsync<T>(Grammar.CompileSelect(this), GetParameters());
+            ResultSet<T> resultSet = await Connection.FetchAsync<T>(Grammar.CompileSelect(this), GetParameters());
 
-            return resultSet.Select(r => r.Model).ToList();
+            return resultSet.All();
         }
 
         /// <summary>

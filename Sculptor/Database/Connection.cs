@@ -34,7 +34,7 @@ namespace Sculptor.Database
             LastInsertId = Convert.ToInt32(command.LastInsertedId);
         }
 
-        public static List<ResultRow<T>> Fetch<T>(string query, Dictionary<string, dynamic> parameters = null) where T : Model<T>, new()
+        public static ResultSet<T> Fetch<T>(string query, Dictionary<string, dynamic> parameters = null) where T : Model<T>, new()
         {
             using var connection = new MySqlConnection(ConnectionString);
             connection.Open();
@@ -43,7 +43,7 @@ namespace Sculptor.Database
             BindParameters(command, parameters);
 
             using var reader = command.ExecuteReader();
-            List<ResultRow<T>> resultSet = new List<ResultRow<T>>();
+            ResultSet<T> resultSet = new ResultSet<T>();
 
             while (reader.Read())
             {
@@ -52,13 +52,13 @@ namespace Sculptor.Database
                 for (int column = 0; column < reader.FieldCount; column++)
                     resultRow.Columns.Add(reader.GetName(column), reader.GetValue(column));
 
-                resultSet.Add(resultRow);
+                resultSet.Rows.Add(resultRow);
             }
 
             return resultSet;
         }
 
-        public static async Task<List<ResultRow<T>>> FetchAsync<T>(string query, Dictionary<string, dynamic> parameters = null) where T : Model<T>, new()
+        public static async Task<ResultSet<T>> FetchAsync<T>(string query, Dictionary<string, dynamic> parameters = null) where T : Model<T>, new()
         {
             using var connection = new MySqlConnection(ConnectionString);
             await connection.OpenAsync();
@@ -67,7 +67,7 @@ namespace Sculptor.Database
             BindParameters(command, parameters);
 
             using var reader = await command.ExecuteReaderAsync();
-            List<ResultRow<T>> resultSet = new List<ResultRow<T>>();
+            ResultSet<T> resultSet = new ResultSet<T>();
 
             while (await reader.ReadAsync())
             {
@@ -76,7 +76,7 @@ namespace Sculptor.Database
                 for (int column = 0; column < reader.FieldCount; column++)
                     resultRow.Columns.Add(reader.GetName(column), reader.GetValue(column));
 
-                resultSet.Add(resultRow);
+                resultSet.Rows.Add(resultRow);
             }
 
             return resultSet;
