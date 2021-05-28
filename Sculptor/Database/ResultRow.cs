@@ -39,7 +39,7 @@ namespace Sculptor.Database
         /// <returns>True if the model has it, false otherwise.</returns>
         private bool HasProperty(string property)
         {
-            return typeof(T).GetProperty(property.ToPascalCase().UcFirst()) != null;
+            return typeof(T).GetProperty(property.ToPascalCase()) != null;
         }
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace Sculptor.Database
         /// <param name="value">The value for the property.</param>
         private void SetProperty(string column, dynamic value)
         {
-            PropertyInfo property = typeof(T).GetProperty(column.ToPascalCase().UcFirst());
+            PropertyInfo property = typeof(T).GetProperty(column.ToPascalCase());
 
             property.SetValue(Model, Convert.ChangeType(value, property.PropertyType));
         }
