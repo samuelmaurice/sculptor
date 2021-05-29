@@ -131,7 +131,7 @@ namespace Sculptor.Query
         /// <returns>An instance of the hydrated model.</returns>
         public T First()
         {
-            ResultSet<T> resultSet = Connection.Fetch<T>(Grammar.CompileSelect(this.Take(1)), GetParameters());
+            ResultSet<T> resultSet = Manager.Connection.Select<T>(Manager.Connection.Grammar.CompileSelect(this.Take(1)), GetParameters());
 
             if (resultSet.Rows.Count == 0)
                 throw new ModelNotFoundException();
@@ -145,7 +145,7 @@ namespace Sculptor.Query
         /// <returns>An instance of the hydrated model.</returns>
         public async Task<T> FirstAsync()
         {
-            ResultSet<T> resultSet = await Connection.FetchAsync<T>(Grammar.CompileSelect(this.Take(1)), GetParameters());
+            ResultSet<T> resultSet = await Manager.Connection.SelectAsync<T>(Manager.Connection.Grammar.CompileSelect(this.Take(1)), GetParameters());
 
             if (resultSet.Rows.Count == 0)
                 throw new ModelNotFoundException();
@@ -159,7 +159,7 @@ namespace Sculptor.Query
         /// <returns>A list of hydrated models.</returns>
         public List<T> Get()
         {
-            ResultSet<T> resultSet = Connection.Fetch<T>(Grammar.CompileSelect(this), GetParameters());
+            ResultSet<T> resultSet = Manager.Connection.Select<T>(Manager.Connection.Grammar.CompileSelect(this), GetParameters());
 
             return resultSet.All();
         }
@@ -170,7 +170,7 @@ namespace Sculptor.Query
         /// <returns>A list of hydrated models.</returns>
         public async Task<List<T>> GetAsync()
         {
-            ResultSet<T> resultSet = await Connection.FetchAsync<T>(Grammar.CompileSelect(this), GetParameters());
+            ResultSet<T> resultSet = await Manager.Connection.SelectAsync<T>(Manager.Connection.Grammar.CompileSelect(this), GetParameters());
 
             return resultSet.All();
         }
@@ -182,9 +182,7 @@ namespace Sculptor.Query
         /// <returns>The value of the primary key.</returns>
         public int Insert(Dictionary<string, dynamic> values)
         {
-            Connection.Execute(Grammar.CompileInsert(this, values), values);
-
-            return Connection.LastInsertId;
+            return Manager.Connection.Insert(Manager.Connection.Grammar.CompileInsert(this, values), values);
         }
 
         /// <summary>
@@ -194,9 +192,7 @@ namespace Sculptor.Query
         /// <returns>The value of the primary key.</returns>
         public async Task<int> InsertAsync(Dictionary<string, dynamic> values)
         {
-            await Connection.ExecuteAsync(Grammar.CompileInsert(this, values), values);
-
-            return Connection.LastInsertId;
+            return await Manager.Connection.InsertAsync(Manager.Connection.Grammar.CompileInsert(this, values), values);
         }
 
         /// <summary>
@@ -205,7 +201,7 @@ namespace Sculptor.Query
         /// <param name="values">The columns to update.</param>
         public void Update(Dictionary<string, dynamic> values)
         {
-            Connection.Execute(Grammar.CompileUpdate(this, values), GetParameters(values));
+            Manager.Connection.Update(Manager.Connection.Grammar.CompileUpdate(this, values), GetParameters(values));
         }
 
         /// <summary>
@@ -214,7 +210,7 @@ namespace Sculptor.Query
         /// <param name="values">The columns to update.</param>
         public async Task UpdateAsync(Dictionary<string, dynamic> values)
         {
-            await Connection.ExecuteAsync(Grammar.CompileUpdate(this, values), GetParameters(values));
+            await Manager.Connection.UpdateAsync(Manager.Connection.Grammar.CompileUpdate(this, values), GetParameters(values));
         }
 
         /// <summary>

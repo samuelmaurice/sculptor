@@ -5,18 +5,26 @@ using System.Text.RegularExpressions;
 
 namespace Sculptor.Query.Grammars
 {
-    public static class Grammar
+    public abstract class Grammar
     {
         /// <summary>
         /// The components that make up a select clause.
         /// </summary>
-        private static readonly Dictionary<string, Func<dynamic, string>> _components = new Dictionary<string, Func<dynamic, string>>()
+        protected Dictionary<string, Func<dynamic, string>> Components { get; private set; }
+
+        /// <summary>
+        /// Create a new grammar instance.
+        /// </summary>
+        public Grammar()
         {
-            { "Columns", CompileColumns },
-            { "From", CompileFrom },
-            { "Wheres", CompileWheres },
-            { "Limit", CompileLimit }
-        };
+            Components = new Dictionary<string, Func<dynamic, string>>()
+            {
+                { "Columns", CompileColumns },
+                { "From", CompileFrom },
+                { "Wheres", CompileWheres },
+                { "Limit", CompileLimit }
+            };
+        }
 
         /// <summary>
         /// Compile a select query into SQL.
@@ -24,11 +32,11 @@ namespace Sculptor.Query.Grammars
         /// <typeparam name="T">The model on which the query is performed.</typeparam>
         /// <param name="query">The query builder instance.</param>
         /// <returns>The compiled select query.</returns>
-        public static string CompileSelect<T>(Builder<T> query) where T : Model<T>, new()
+        public virtual string CompileSelect<T>(Builder<T> query) where T : Model<T>, new()
         {
             List<string> sql = new List<string>();
 
-            foreach (var component in _components)
+            foreach (var component in Components)
                 sql.Add(component.Value.Invoke(query.GetType().GetProperty(component.Key).GetValue(query)));
 
             return string.Join(" ", sql);
@@ -39,7 +47,7 @@ namespace Sculptor.Query.Grammars
         /// </summary>
         /// <param name="columns">The columns that should be returned.</param>
         /// <returns>The compiled "select" portion.</returns>
-        private static string CompileColumns(dynamic columns)
+        protected virtual string CompileColumns(dynamic columns)
         {
             if (columns is null)
                 columns = new string[] { "*" };
@@ -52,7 +60,7 @@ namespace Sculptor.Query.Grammars
         /// </summary>
         /// <param name="table">The table which the query is targeting.</param>
         /// <returns>The compiled "from" portion.</returns>
-        private static string CompileFrom(dynamic table)
+        protected virtual string CompileFrom(dynamic table)
         {
             return string.Format("FROM {0}", table);
         }
@@ -62,7 +70,7 @@ namespace Sculptor.Query.Grammars
         /// </summary>
         /// <param name="wheres">The where constraints for the query.</param>
         /// <returns>The compiled "where" portion.</returns>
-        private static string CompileWheres(dynamic wheres)
+        protected virtual string CompileWheres(dynamic wheres)
         {
             List<WhereClause> whereClauses = (List<WhereClause>) wheres;
 
@@ -77,7 +85,7 @@ namespace Sculptor.Query.Grammars
         /// </summary>
         /// <param name="limit">The maximum number of records to return.</param>
         /// <returns>The compiled "limit" portion.</returns>
-        private static string CompileLimit(dynamic limit)
+        protected virtual string CompileLimit(dynamic limit)
         {
             if (limit > 0)
                 return string.Format("LIMIT {0}", limit);
@@ -92,7 +100,7 @@ namespace Sculptor.Query.Grammars
         /// <param name="query">The query builder instance.</param>
         /// <param name="values">The values to insert.</param>
         /// <returns>The compiled insert query.</returns>
-        public static string CompileInsert<T>(Builder<T> query, Dictionary<string, dynamic> values) where T : Model<T>, new()
+        public virtual string CompileInsert<T>(Builder<T> query, Dictionary<string, dynamic> values) where T : Model<T>, new()
         {
             string columns = string.Join(", ", values.Keys);
             string parameters = string.Join(", ", values.Select(v => "@" + v.Key));
@@ -107,7 +115,7 @@ namespace Sculptor.Query.Grammars
         /// <param name="query">The query builder instance.</param>
         /// <param name="values">The columns to update.</param>
         /// <returns>The compiled update query.</returns>
-        public static string CompileUpdate<T>(Builder<T> query, Dictionary<string, dynamic> values) where T : Model<T>, new()
+        public virtual string CompileUpdate<T>(Builder<T> query, Dictionary<string, dynamic> values) where T : Model<T>, new()
         {
             return string.Format("UPDATE {0} SET {1} {2}", query.From, CompileUpdateColumns(values), CompileWheres(query.Wheres));
         }
@@ -117,7 +125,7 @@ namespace Sculptor.Query.Grammars
         /// </summary>
         /// <param name="values">The columns to update.</param>
         /// <returns>The compiled "set" portion.</returns>
-        private static string CompileUpdateColumns(Dictionary<string, dynamic> values)
+        protected virtual string CompileUpdateColumns(Dictionary<string, dynamic> values)
         {
             return string.Join(", ", values.Select(v => string.Format("{0} = @{0}", v.Key)));
         }
@@ -126,7 +134,7 @@ namespace Sculptor.Query.Grammars
         /// Remove the leading boolean from a statement.
         /// </summary>
         /// <returns>The statement without the leading boolean.</returns>
-        private static string RemoveLeadingBoolean(string value)
+        protected static string RemoveLeadingBoolean(string value)
         {
             return new Regex("AND |OR ", RegexOptions.IgnoreCase).Replace(value, "", 1);
         }
