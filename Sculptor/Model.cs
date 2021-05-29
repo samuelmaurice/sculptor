@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Sculptor.Attributes;
 using Sculptor.Query;
 using Sculptor.Utils;
 
@@ -10,6 +11,11 @@ namespace Sculptor
 {
     public abstract class Model<T> where T : Model<T>, new()
     {
+        /// <summary>
+        /// The connection name for the model.
+        /// </summary>
+        public static string Connection => typeof(T).GetCustomAttribute<ConnectionAttribute>()?.Name ?? "default";
+
         /// <summary>
         /// The table associated with the model.
         /// </summary>

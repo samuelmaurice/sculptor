@@ -9,13 +9,31 @@ namespace Sculptor.Database.Connectors
 {
     public class MySqlConnection : IConnection
     {
+        /// <summary>
+        /// The database connection string.
+        /// </summary>
+        public static string ConnectionString { get; private set; }
+
         /// <inheritdoc />
         public Grammar Grammar => new MySqlGrammar();
+
+        /// <summary>
+        /// Create a new MySql connection instance.
+        /// </summary>
+        /// <param name="host">The hostname of the MySQL server.</param>
+        /// <param name="database">The name of the database.</param>
+        /// <param name="user">The user for the connection.</param>
+        /// <param name="password">The password for the given user.</param>
+        /// <param name="port">The port of the MySQL server.</param>
+        public MySqlConnection(string host, string database, string user, string password, int port = 3306)
+        {
+            ConnectionString = string.Format("Host={0};Port={1};User={2};Password={3};Database={4}", host, port, user, password, database);
+        }
 
         /// <inheritdoc />
         public ResultSet<T> Select<T>(string query, Dictionary<string, dynamic> bindings = null) where T : Model<T>, new()
         {
-            using var connection = new Connection(Manager.ConnectionString);
+            using var connection = new Connection(ConnectionString);
             connection.Open();
 
             using var command = new Command(query, connection);
@@ -40,7 +58,7 @@ namespace Sculptor.Database.Connectors
         /// <inheritdoc />
         public async Task<ResultSet<T>> SelectAsync<T>(string query, Dictionary<string, dynamic> bindings = null) where T : Model<T>, new()
         {
-            using var connection = new Connection(Manager.ConnectionString);
+            using var connection = new Connection(ConnectionString);
             await connection.OpenAsync();
 
             using var command = new Command(query, connection);
@@ -65,7 +83,7 @@ namespace Sculptor.Database.Connectors
         /// <inheritdoc />
         public int Insert(string query, Dictionary<string, dynamic> bindings = null)
         {
-            using var connection = new Connection(Manager.ConnectionString);
+            using var connection = new Connection(ConnectionString);
             connection.Open();
 
             using var command = new Command(query, connection);
@@ -78,7 +96,7 @@ namespace Sculptor.Database.Connectors
         /// <inheritdoc />
         public async Task<int> InsertAsync(string query, Dictionary<string, dynamic> bindings = null)
         {
-            using var connection = new Connection(Manager.ConnectionString);
+            using var connection = new Connection(ConnectionString);
             await connection.OpenAsync();
 
             using var command = new Command(query, connection);
@@ -91,7 +109,7 @@ namespace Sculptor.Database.Connectors
         /// <inheritdoc />
         public void Update(string query, Dictionary<string, dynamic> bindings = null)
         {
-            using var connection = new Connection(Manager.ConnectionString);
+            using var connection = new Connection(ConnectionString);
             connection.Open();
 
             using var command = new Command(query, connection);
@@ -102,7 +120,7 @@ namespace Sculptor.Database.Connectors
         /// <inheritdoc />
         public async Task UpdateAsync(string query, Dictionary<string, dynamic> bindings = null)
         {
-            using var connection = new Connection(Manager.ConnectionString);
+            using var connection = new Connection(ConnectionString);
             await connection.OpenAsync();
 
             using var command = new Command(query, connection);
@@ -113,7 +131,7 @@ namespace Sculptor.Database.Connectors
         /// <inheritdoc />
         public void Delete(string query, Dictionary<string, dynamic> bindings = null)
         {
-            using var connection = new Connection(Manager.ConnectionString);
+            using var connection = new Connection(ConnectionString);
             connection.Open();
 
             using var command = new Command(query, connection);
@@ -124,7 +142,7 @@ namespace Sculptor.Database.Connectors
         /// <inheritdoc />
         public async Task DeleteAsync(string query, Dictionary<string, dynamic> bindings = null)
         {
-            using var connection = new Connection(Manager.ConnectionString);
+            using var connection = new Connection(ConnectionString);
             await connection.OpenAsync();
 
             using var command = new Command(query, connection);

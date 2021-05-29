@@ -16,8 +16,8 @@ public class User : Model<User>
     public string Password { get; set; }
 }
 
-// Set the connection string to the database
-Connection.ConnectionString = "Host=localhost;Port=3306;User=root;Password=secret;Database=database";
+// Add a new connection
+Manager.Connections.Add("default", new MySqlConnection("localhost", "database", "root", "secret"));
 
 // Retrieve a user
 User user = User.First();

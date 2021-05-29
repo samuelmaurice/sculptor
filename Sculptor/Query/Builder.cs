@@ -1,13 +1,18 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Sculptor.Database;
+using Sculptor.Database.Connectors;
 using Sculptor.Exceptions;
-using Sculptor.Query.Grammars;
 
 namespace Sculptor.Query
 {
     public class Builder<T> where T : Model<T>, new()
     {
+        /// <summary>
+        /// The database connection instance.
+        /// </summary>
+        private IConnection Connection => Manager.Connections[typeof(Model<T>).GetProperty("Connection").GetValue(null).ToString()];
+
         /// <summary>
         /// The columns that should be returned.
         /// </summary>
@@ -131,7 +136,7 @@ namespace Sculptor.Query
         /// <returns>An instance of the hydrated model.</returns>
         public T First()
         {
-            ResultSet<T> resultSet = Manager.Connection.Select<T>(Manager.Connection.Grammar.CompileSelect(this.Take(1)), GetParameters());
+            ResultSet<T> resultSet = Connection.Select<T>(Connection.Grammar.CompileSelect(this.Take(1)), GetParameters());
 
             if (resultSet.Rows.Count == 0)
                 throw new ModelNotFoundException();
@@ -145,7 +150,7 @@ namespace Sculptor.Query
         /// <returns>An instance of the hydrated model.</returns>
         public async Task<T> FirstAsync()
         {
-            ResultSet<T> resultSet = await Manager.Connection.SelectAsync<T>(Manager.Connection.Grammar.CompileSelect(this.Take(1)), GetParameters());
+            ResultSet<T> resultSet = await Connection.SelectAsync<T>(Connection.Grammar.CompileSelect(this.Take(1)), GetParameters());
 
             if (resultSet.Rows.Count == 0)
                 throw new ModelNotFoundException();
@@ -159,7 +164,7 @@ namespace Sculptor.Query
         /// <returns>A list of hydrated models.</returns>
         public List<T> Get()
         {
-            ResultSet<T> resultSet = Manager.Connection.Select<T>(Manager.Connection.Grammar.CompileSelect(this), GetParameters());
+            ResultSet<T> resultSet = Connection.Select<T>(Connection.Grammar.CompileSelect(this), GetParameters());
 
             return resultSet.All();
         }
@@ -170,7 +175,7 @@ namespace Sculptor.Query
         /// <returns>A list of hydrated models.</returns>
         public async Task<List<T>> GetAsync()
         {
-            ResultSet<T> resultSet = await Manager.Connection.SelectAsync<T>(Manager.Connection.Grammar.CompileSelect(this), GetParameters());
+            ResultSet<T> resultSet = await Connection.SelectAsync<T>(Connection.Grammar.CompileSelect(this), GetParameters());
 
             return resultSet.All();
         }
@@ -182,7 +187,7 @@ namespace Sculptor.Query
         /// <returns>The value of the primary key.</returns>
         public int Insert(Dictionary<string, dynamic> values)
         {
-            return Manager.Connection.Insert(Manager.Connection.Grammar.CompileInsert(this, values), values);
+            return Connection.Insert(Connection.Grammar.CompileInsert(this, values), values);
         }
 
         /// <summary>
@@ -192,7 +197,7 @@ namespace Sculptor.Query
         /// <returns>The value of the primary key.</returns>
         public async Task<int> InsertAsync(Dictionary<string, dynamic> values)
         {
-            return await Manager.Connection.InsertAsync(Manager.Connection.Grammar.CompileInsert(this, values), values);
+            return await Connection.InsertAsync(Connection.Grammar.CompileInsert(this, values), values);
         }
 
         /// <summary>
@@ -201,7 +206,7 @@ namespace Sculptor.Query
         /// <param name="values">The columns to update.</param>
         public void Update(Dictionary<string, dynamic> values)
         {
-            Manager.Connection.Update(Manager.Connection.Grammar.CompileUpdate(this, values), GetParameters(values));
+            Connection.Update(Connection.Grammar.CompileUpdate(this, values), GetParameters(values));
         }
 
         /// <summary>
@@ -210,7 +215,7 @@ namespace Sculptor.Query
         /// <param name="values">The columns to update.</param>
         public async Task UpdateAsync(Dictionary<string, dynamic> values)
         {
-            await Manager.Connection.UpdateAsync(Manager.Connection.Grammar.CompileUpdate(this, values), GetParameters(values));
+            await Connection.UpdateAsync(Connection.Grammar.CompileUpdate(this, values), GetParameters(values));
         }
 
         /// <summary>

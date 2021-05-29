@@ -15,5 +15,6 @@
     <Folder Include="Query\" />
     <Folder Include="Query\Grammars\" />
     <Folder Include="Database\Connectors\" />
+    <Folder Include="Attributes\" />
   </ItemGroup>
 </Project>
