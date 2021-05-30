@@ -22,18 +22,33 @@ namespace Sculptor
         public static string Table => typeof(T).Name.Pluralize().ToSnakeCase();
 
         /// <summary>
+        /// The primary key name of the model.
+        /// </summary>
+        private static string PrimaryKeyName
+        {
+            get
+            {
+                foreach (var property in typeof(T).GetProperties())
+                    if (Attribute.IsDefined(property, typeof(PrimaryKeyAttribute)))
+                        return property.Name;
+
+                return "Id";
+            }
+        }
+
+        /// <summary>
         /// The primary key of the model.
         /// </summary>
-        private int PrimaryKey
+        private dynamic PrimaryKey
         {
-            get { return Convert.ToInt32(typeof(T).GetProperty("Id").GetValue(this)); }
-            set { typeof(T).GetProperty("Id").SetValue(this, value); }
+            get { return typeof(T).GetProperty(PrimaryKeyName).GetValue(this); }
+            set { typeof(T).GetProperty(PrimaryKeyName).SetValue(this, value); }
         }
 
         /// <summary>
         /// Indicates if the model exists.
         /// </summary>
-        public bool Exists => Convert.ToBoolean(typeof(T).GetProperty("Id").GetValue(this));
+        public bool Exists => Convert.ToBoolean(typeof(T).GetProperty(PrimaryKeyName).GetValue(this));
 
         /// <summary>
         /// Get a new query builder instance for the model.
@@ -47,7 +62,7 @@ namespace Sculptor
         /// <returns>An instance of the hydrated model.</returns>
         public static T Find(int id)
         {
-            return Query.Where("id", id).First();
+            return Query.Where(PrimaryKeyName.ToSnakeCase(), id).First();
         }
 
         /// <summary>
@@ -57,7 +72,7 @@ namespace Sculptor
         /// <returns>An instance of the hydrated model.</returns>
         public static async Task<T> FindAsync(int id)
         {
-            return await Query.Where("id", id).FirstAsync();
+            return await Query.Where(PrimaryKeyName.ToSnakeCase(), id).FirstAsync();
         }
 
         /// <summary>
@@ -121,7 +136,7 @@ namespace Sculptor
         /// </summary>
         private void PerformUpdate()
         {
-            Query.Where("id", PrimaryKey).Update(GetParameters());
+            Query.Where(PrimaryKeyName.ToSnakeCase(), PrimaryKey).Update(GetParameters());
         }
 
         /// <summary>
@@ -129,7 +144,7 @@ namespace Sculptor
         /// </summary>
         private async Task PerformUpdateAsync()
         {
-            await Query.Where("id", PrimaryKey).UpdateAsync(GetParameters());
+            await Query.Where(PrimaryKeyName.ToSnakeCase(), PrimaryKey).UpdateAsync(GetParameters());
         }
 
         /// <summary>
@@ -141,7 +156,7 @@ namespace Sculptor
             PropertyInfo[] properties = typeof(T).GetProperties();
             Dictionary<string, dynamic> parameters = new Dictionary<string, dynamic>();
 
-            string[] bannedProperties = { "Id", "Table", "PrimaryKey", "Exists", "Query" };
+            string[] bannedProperties = { PrimaryKeyName, "Table", "PrimaryKeyName", "PrimaryKey", "Exists", "Query" };
 
             foreach (var property in properties)
                 if (!bannedProperties.Any(property.Name.Contains))
