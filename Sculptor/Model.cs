@@ -14,7 +14,7 @@ namespace Sculptor
         /// <summary>
         /// The connection name for the model.
         /// </summary>
-        public static string Connection => typeof(T).GetCustomAttribute<ConnectionAttribute>()?.Name ?? "default";
+        public static string Connection => typeof(T).GetCustomAttribute<ConnectionAttribute>()?.Name ?? Manager.Connection;
 
         /// <summary>
         /// The table associated with the model.
