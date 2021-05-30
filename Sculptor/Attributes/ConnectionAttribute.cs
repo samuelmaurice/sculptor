@@ -1,4 +1,5 @@
 ﻿using System;
+using Sculptor.Exceptions;
 
 namespace Sculptor.Attributes
 {
@@ -16,6 +17,9 @@ namespace Sculptor.Attributes
         /// <param name="name">The connection name for the model.</param>
         public ConnectionAttribute(string name)
         {
+            if (!Manager.Connections.ContainsKey(name))
+                throw new ConnectionNotFoundException();
+
             Name = name;
         }
     }
