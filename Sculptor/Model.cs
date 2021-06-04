@@ -120,7 +120,7 @@ namespace Sculptor
         /// </summary>
         private void PerformInsert()
         {
-            PrimaryKey = Query.Insert(GetParameters());
+            PrimaryKey = Query.Insert(PrepareBindings());
         }
 
         /// <summary>
@@ -128,7 +128,7 @@ namespace Sculptor
         /// </summary>
         private async Task PerformInsertAsync()
         {
-            PrimaryKey = await Query.InsertAsync(GetParameters());
+            PrimaryKey = await Query.InsertAsync(PrepareBindings());
         }
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace Sculptor
         /// </summary>
         private void PerformUpdate()
         {
-            Query.Where(PrimaryKeyName.ToSnakeCase(), PrimaryKey).Update(GetParameters());
+            Query.Where(PrimaryKeyName.ToSnakeCase(), PrimaryKey).Update(PrepareBindings());
         }
 
         /// <summary>
@@ -144,25 +144,21 @@ namespace Sculptor
         /// </summary>
         private async Task PerformUpdateAsync()
         {
-            await Query.Where(PrimaryKeyName.ToSnakeCase(), PrimaryKey).UpdateAsync(GetParameters());
+            await Query.Where(PrimaryKeyName.ToSnakeCase(), PrimaryKey).UpdateAsync(PrepareBindings());
         }
 
         /// <summary>
-        /// Build a list of parameters.
+        /// Get the current query value bindings.
         /// </summary>
         /// <returns>A collection of columns and values.</returns>
-        private Dictionary<string, dynamic> GetParameters()
+        private Dictionary<string, dynamic> PrepareBindings()
         {
-            PropertyInfo[] properties = typeof(T).GetProperties();
-            Dictionary<string, dynamic> parameters = new Dictionary<string, dynamic>();
+            PropertyInfo[] properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+            Dictionary<string, dynamic> bindings = properties.ToDictionary(p => p.Name.ToSnakeCase(), p => p.GetValue(this));
 
-            string[] bannedProperties = { PrimaryKeyName, "Table", "PrimaryKeyName", "PrimaryKey", "Exists", "Query" };
+            bindings.Remove(PrimaryKeyName.ToSnakeCase());
 
-            foreach (var property in properties)
-                if (!bannedProperties.Any(property.Name.Contains))
-                    parameters.Add(property.Name.ToSnakeCase(), property.GetValue(this));
-
-            return parameters;
+            return bindings;
         }
     }
 }

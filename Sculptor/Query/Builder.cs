@@ -136,7 +136,7 @@ namespace Sculptor.Query
         /// <returns>An instance of the hydrated model.</returns>
         public T First()
         {
-            ResultSet<T> resultSet = Connection.Select<T>(Connection.Grammar.CompileSelect(this.Take(1)), GetParameters());
+            ResultSet<T> resultSet = Connection.Select<T>(Connection.Grammar.CompileSelect(this.Take(1)), PrepareBindings());
 
             if (resultSet.Rows.Count == 0)
                 throw new ModelNotFoundException();
@@ -150,7 +150,7 @@ namespace Sculptor.Query
         /// <returns>An instance of the hydrated model.</returns>
         public async Task<T> FirstAsync()
         {
-            ResultSet<T> resultSet = await Connection.SelectAsync<T>(Connection.Grammar.CompileSelect(this.Take(1)), GetParameters());
+            ResultSet<T> resultSet = await Connection.SelectAsync<T>(Connection.Grammar.CompileSelect(this.Take(1)), PrepareBindings());
 
             if (resultSet.Rows.Count == 0)
                 throw new ModelNotFoundException();
@@ -164,7 +164,7 @@ namespace Sculptor.Query
         /// <returns>A list of hydrated models.</returns>
         public List<T> Get()
         {
-            ResultSet<T> resultSet = Connection.Select<T>(Connection.Grammar.CompileSelect(this), GetParameters());
+            ResultSet<T> resultSet = Connection.Select<T>(Connection.Grammar.CompileSelect(this), PrepareBindings());
 
             return resultSet.All();
         }
@@ -175,7 +175,7 @@ namespace Sculptor.Query
         /// <returns>A list of hydrated models.</returns>
         public async Task<List<T>> GetAsync()
         {
-            ResultSet<T> resultSet = await Connection.SelectAsync<T>(Connection.Grammar.CompileSelect(this), GetParameters());
+            ResultSet<T> resultSet = await Connection.SelectAsync<T>(Connection.Grammar.CompileSelect(this), PrepareBindings());
 
             return resultSet.All();
         }
@@ -206,7 +206,7 @@ namespace Sculptor.Query
         /// <param name="values">The columns to update.</param>
         public void Update(Dictionary<string, dynamic> values)
         {
-            Connection.Update(Connection.Grammar.CompileUpdate(this, values), GetParameters(values));
+            Connection.Update(Connection.Grammar.CompileUpdate(this, values), PrepareBindings(values));
         }
 
         /// <summary>
@@ -215,19 +215,19 @@ namespace Sculptor.Query
         /// <param name="values">The columns to update.</param>
         public async Task UpdateAsync(Dictionary<string, dynamic> values)
         {
-            await Connection.UpdateAsync(Connection.Grammar.CompileUpdate(this, values), GetParameters(values));
+            await Connection.UpdateAsync(Connection.Grammar.CompileUpdate(this, values), PrepareBindings(values));
         }
 
         /// <summary>
-        /// Build a list of parameters including the where clauses.
+        /// Get the current query value bindings including the where clauses.
         /// </summary>
         /// <returns>A collection of columns and values.</returns>
-        private Dictionary<string, dynamic> GetParameters(Dictionary<string, dynamic> values = null)
+        private Dictionary<string, dynamic> PrepareBindings(Dictionary<string, dynamic> values = null)
         {
-            Dictionary<string, dynamic> parameters = values is null ? new Dictionary<string, dynamic>() : values;
-            Wheres.ForEach(w => parameters.Add(w.Column, w.Value));
+            Dictionary<string, dynamic> bindings = values is null ? new Dictionary<string, dynamic>() : values;
+            Wheres.ForEach(w => bindings.Add(w.Column, w.Value));
 
-            return parameters;
+            return bindings;
         }
     }
 }
