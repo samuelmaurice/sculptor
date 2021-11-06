@@ -42,6 +42,9 @@ namespace Sculptor.Database.Connectors
             using var reader = command.ExecuteReader();
             ResultSet<T> resultSet = new ResultSet<T>();
 
+            if (Manager.DebugMode)
+                Manager.Logger(query);
+
             while (reader.Read())
             {
                 ResultRow<T> resultRow = new ResultRow<T>();
@@ -67,6 +70,9 @@ namespace Sculptor.Database.Connectors
             using var reader = await command.ExecuteReaderAsync();
             ResultSet<T> resultSet = new ResultSet<T>();
 
+            if (Manager.DebugMode)
+                Manager.Logger(query);
+
             while (await reader.ReadAsync())
             {
                 ResultRow<T> resultRow = new ResultRow<T>();
@@ -90,6 +96,9 @@ namespace Sculptor.Database.Connectors
             BindParameters(command, bindings);
             command.ExecuteNonQuery();
 
+            if (Manager.DebugMode)
+                Manager.Logger(query);
+
             return Convert.ToInt32(command.LastInsertedId);
         }
 
@@ -103,6 +112,9 @@ namespace Sculptor.Database.Connectors
             BindParameters(command, bindings);
             await command.ExecuteNonQueryAsync();
 
+            if (Manager.DebugMode)
+                Manager.Logger(query);
+
             return Convert.ToInt32(command.LastInsertedId);
         }
 
@@ -115,6 +127,9 @@ namespace Sculptor.Database.Connectors
             using var command = new Command(query, connection);
             BindParameters(command, bindings);
             command.ExecuteNonQuery();
+
+            if (Manager.DebugMode)
+                Manager.Logger(query);
         }
 
         /// <inheritdoc />
@@ -126,6 +141,9 @@ namespace Sculptor.Database.Connectors
             using var command = new Command(query, connection);
             BindParameters(command, bindings);
             await command.ExecuteNonQueryAsync();
+
+            if (Manager.DebugMode)
+                Manager.Logger(query);
         }
 
         /// <inheritdoc />
@@ -137,6 +155,9 @@ namespace Sculptor.Database.Connectors
             using var command = new Command(query, connection);
             BindParameters(command, bindings);
             command.ExecuteNonQuery();
+
+            if (Manager.DebugMode)
+                Manager.Logger(query);
         }
 
         /// <inheritdoc />
@@ -148,6 +169,9 @@ namespace Sculptor.Database.Connectors
             using var command = new Command(query, connection);
             BindParameters(command, bindings);
             await command.ExecuteNonQueryAsync();
+
+            if (Manager.DebugMode)
+                Manager.Logger(query);
         }
 
         private static void BindParameters(Command command, Dictionary<string, dynamic> parameters = null)
