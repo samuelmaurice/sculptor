@@ -122,6 +122,42 @@ namespace Sculptor
         }
 
         /// <summary>
+        /// Define a one-to-one relationship.
+        /// </summary>
+        /// <typeparam name="R">The child model.</typeparam>
+        /// <returns>An instance of the related model.</returns>
+        public R HasOne<R>() where R : Model<R>, new()
+        {
+            string relationName = typeof(T).Name;
+
+            if (Relations.TryGetValue(relationName, out object instance))
+                return (R)instance;
+
+            string foreignKeyName = typeof(T).Name.ToSnakeCase() + "_id";
+            Relations.Add(relationName, Model<R>.Query.Where(foreignKeyName, PrimaryKey).First());
+
+            return (R)Relations[relationName];
+        }
+
+        /// <summary>
+        /// Asynchronously define a one-to-one relationship.
+        /// </summary>
+        /// <typeparam name="R">The child model.</typeparam>
+        /// <returns>An instance of the related model.</returns>
+        public async Task<R> HasOneAsync<R>() where R : Model<R>, new()
+        {
+            string relationName = typeof(T).Name;
+
+            if (Relations.TryGetValue(relationName, out object instance))
+                return (R)instance;
+
+            string foreignKeyName = typeof(T).Name.ToSnakeCase() + "_id";
+            Relations.Add(relationName, await Model<R>.Query.Where(foreignKeyName, PrimaryKey).FirstAsync());
+
+            return (R)Relations[relationName];
+        }
+
+        /// <summary>
         /// Define an inverse one-to-one or many relationship.
         /// </summary>
         /// <typeparam name="R">The parent model.</typeparam>

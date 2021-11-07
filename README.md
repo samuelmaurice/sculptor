@@ -47,8 +47,8 @@ user.SaveAsync();
     - [ ] PostgreSQL
     - [ ] SQLite
     - [ ] SQL Server
-- [ ] Relationships
-    - [ ] One To One
+- [x] Relationships
+    - [x] One To One
     - [ ] One To Many
     - [ ] Many To Many
 - [ ] Migrations
