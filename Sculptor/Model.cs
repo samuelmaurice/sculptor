@@ -194,6 +194,42 @@ namespace Sculptor
         }
 
         /// <summary>
+        /// Define a one-to-many relationship.
+        /// </summary>
+        /// <typeparam name="R">The child model.</typeparam>
+        /// <returns>A list of related models.</returns>
+        public List<R> HasMany<R>() where R : Model<R>, new()
+        {
+            string relationName = typeof(T).Name;
+
+            if (Relations.TryGetValue(relationName, out object instance))
+                return (List<R>)instance;
+
+            string foreignKeyName = typeof(T).Name.ToSnakeCase() + "_id";
+            Relations.Add(relationName, Model<R>.Query.Where(foreignKeyName, PrimaryKey).Get());
+
+            return (List<R>)Relations[relationName];
+        }
+
+        /// <summary>
+        /// Asynchronously define a one-to-many relationship.
+        /// </summary>
+        /// <typeparam name="R">The child model.</typeparam>
+        /// <returns>A list of related models.</returns>
+        public async Task<List<R>> HasManyAsync<R>() where R : Model<R>, new()
+        {
+            string relationName = typeof(T).Name;
+
+            if (Relations.TryGetValue(relationName, out object instance))
+                return (List<R>)instance;
+
+            string foreignKeyName = typeof(T).Name.ToSnakeCase() + "_id";
+            Relations.Add(relationName, await Model<R>.Query.Where(foreignKeyName, PrimaryKey).GetAsync());
+
+            return (List<R>)Relations[relationName];
+        }
+
+        /// <summary>
         /// Perform a model insert operation.
         /// </summary>
         private void PerformInsert()
