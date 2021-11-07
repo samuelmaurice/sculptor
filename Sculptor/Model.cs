@@ -20,7 +20,7 @@ namespace Sculptor
         /// <summary>
         /// The table associated with the model.
         /// </summary>
-        public static string Table => typeof(T).Name.Pluralize().ToSnakeCase();
+        public static string Table => typeof(T).GetCustomAttribute<TableAttribute>()?.Name ?? typeof(T).Name.Pluralize().ToSnakeCase();
 
         /// <summary>
         /// The primary key name of the model.
