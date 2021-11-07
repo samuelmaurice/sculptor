@@ -200,7 +200,7 @@ namespace Sculptor
         /// <returns>A list of related models.</returns>
         public List<R> HasMany<R>() where R : Model<R>, new()
         {
-            string relationName = typeof(T).Name;
+            string relationName = new StackTrace().GetFrame(1).GetMethod().Name.Substring(4);
 
             if (Relations.TryGetValue(relationName, out object instance))
                 return (List<R>)instance;
@@ -218,7 +218,7 @@ namespace Sculptor
         /// <returns>A list of related models.</returns>
         public async Task<List<R>> HasManyAsync<R>() where R : Model<R>, new()
         {
-            string relationName = typeof(T).Name;
+            string relationName = new StackTrace().GetFrame(1).GetMethod().Name.Substring(4);
 
             if (Relations.TryGetValue(relationName, out object instance))
                 return (List<R>)instance;
