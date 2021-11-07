@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -54,6 +55,11 @@ namespace Sculptor
         /// Get a new query builder instance for the model.
         /// </summary>
         public static Builder<T> Query => Builder<T>.Query(Table);
+
+        /// <summary>
+        /// The loaded relationships for the model.
+        /// </summary>
+        private Dictionary<string, object> Relations { get; } = new Dictionary<string, object>();
 
         /// <summary>
         /// Find a model by its primary key.
@@ -113,6 +119,42 @@ namespace Sculptor
                 await PerformUpdateAsync();
             else
                 await PerformInsertAsync();
+        }
+
+        /// <summary>
+        /// Define an inverse one-to-one or many relationship.
+        /// </summary>
+        /// <typeparam name="R">The parent model.</typeparam>
+        /// <returns>An instance of the related model.</returns>
+        public R BelongsTo<R>() where R : Model<R>, new()
+        {
+            string relationName = new StackTrace().GetFrame(1).GetMethod().Name.Substring(4);
+
+            if (Relations.TryGetValue(relationName, out object instance))
+                return (R)instance;
+
+            int foreignKey = Convert.ToInt32(typeof(T).GetProperty(relationName + "Id").GetValue(this));
+            Relations.Add(relationName, Model<R>.Find(foreignKey));
+
+            return (R)Relations[relationName];
+        }
+
+        /// <summary>
+        /// Asynchronously define an inverse one-to-one or many relationship.
+        /// </summary>
+        /// <typeparam name="R">The parent model.</typeparam>
+        /// <returns>An instance of the related model.</returns>
+        public async Task<R> BelongsToAsync<R>() where R : Model<R>, new()
+        {
+            string relationName = new StackTrace().GetFrame(1).GetMethod().Name.Substring(4);
+
+            if (Relations.TryGetValue(relationName, out object instance))
+                return (R)instance;
+
+            int foreignKey = Convert.ToInt32(typeof(T).GetProperty(relationName + "Id").GetValue(this));
+            Relations.Add(relationName, await Model<R>.FindAsync(foreignKey));
+
+            return (R)Relations[relationName];
         }
 
         /// <summary>
