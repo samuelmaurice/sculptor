@@ -268,7 +268,7 @@ namespace Sculptor
         private Dictionary<string, dynamic> PrepareBindings()
         {
             PropertyInfo[] properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-            Dictionary<string, dynamic> bindings = properties.Where(p => p.PropertyType.IsValueType || p.PropertyType == typeof(string)).ToDictionary(p => Attribute.IsDefined(p, typeof(ColumnAttribute)) ? p.GetCustomAttribute<ColumnAttribute>().Name.ToSnakeCase() : p.Name.ToSnakeCase(), p => p.GetValue(this));
+            Dictionary<string, dynamic> bindings = properties.Where(p => p.PropertyType.IsValueType || p.PropertyType == typeof(string)).ToDictionary(p => Attribute.IsDefined(p, typeof(ColumnAttribute)) ? p.GetCustomAttribute<ColumnAttribute>().Name : p.Name.ToSnakeCase(), p => p.GetValue(this));
 
             bindings.Remove(PrimaryKeyName.ToSnakeCase());
 
