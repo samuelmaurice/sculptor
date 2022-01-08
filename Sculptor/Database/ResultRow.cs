@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Sculptor.Attributes;
 using Sculptor.Utils;
 
 namespace Sculptor.Database
@@ -26,32 +27,29 @@ namespace Sculptor.Database
             Model = new T();
 
             foreach (var column in Columns)
-                if (HasProperty(column.Key))
-                    SetProperty(column.Key, column.Value);
+                SetProperty(column.Key, column.Value);
 
             return Model;
         }
 
         /// <summary>
-        /// Check if the model has the given property.
-        /// </summary>
-        /// <param name="property">The name of the property.</param>
-        /// <returns>True if the model has it, false otherwise.</returns>
-        private bool HasProperty(string property)
-        {
-            return typeof(T).GetProperty(property.ToPascalCase()) != null;
-        }
-
-        /// <summary>
-        /// Set the given property on the model.
+        /// Set the given property on the model if it exists.
         /// </summary>
         /// <param name="column">The name of the property.</param>
         /// <param name="value">The value for the property.</param>
         private void SetProperty(string column, dynamic value)
         {
-            PropertyInfo property = typeof(T).GetProperty(column.ToPascalCase());
+            PropertyInfo[] properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
-            property.SetValue(Model, Convert.ChangeType(value, property.PropertyType));
+            foreach (PropertyInfo property in properties)
+            {
+                if (Attribute.IsDefined(property, typeof(ColumnAttribute)))
+                    if (property.GetCustomAttribute<ColumnAttribute>().Name == column)
+                        property.SetValue(Model, Convert.ChangeType(value, property.PropertyType));
+
+                if (property.Name == column.ToPascalCase())
+                    property.SetValue(Model, Convert.ChangeType(value, property.PropertyType));
+            }
         }
     }
 }
