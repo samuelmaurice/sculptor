@@ -62,6 +62,24 @@ namespace Sculptor
         private Dictionary<string, object> Relations { get; } = new Dictionary<string, object>();
 
         /// <summary>
+        /// Retrieve the "count" result of the query.
+        /// </summary>
+        /// <returns>The number of rows in the table.</returns>
+        public static int Count()
+        {
+            return Convert.ToInt32(Query.Aggregate("count", "*", "aggregate").Raw().First().Columns["aggregate"]);
+        }
+
+        /// <summary>
+        /// Asynchronously retrieve the "count" result of the query.
+        /// </summary>
+        /// <returns>The number of rows in the table.</returns>
+        public static async Task<int> CountAsync()
+        {
+            return Convert.ToInt32((await Query.Aggregate("count", "*", "aggregate").RawAsync()).First().Columns["aggregate"]);
+        }
+
+        /// <summary>
         /// Find a model by its primary key.
         /// </summary>
         /// <param name="id">The value of the primary key.</param>

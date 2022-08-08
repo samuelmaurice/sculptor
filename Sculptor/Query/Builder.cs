@@ -14,6 +14,11 @@ namespace Sculptor.Query
         private IConnection Connection => Manager.Connections[typeof(Model<T>).GetProperty("Connection").GetValue(null).ToString()];
 
         /// <summary>
+        /// The aggregate functions to be run.
+        /// </summary>
+        public List<Aggregate> Aggregates { get; private set; }
+
+        /// <summary>
         /// The columns that should be returned.
         /// </summary>
         public string[] Columns { get; private set; }
@@ -41,6 +46,7 @@ namespace Sculptor.Query
         {
             From = table;
             Wheres = new List<WhereClause>();
+            Aggregates = new List<Aggregate>();
         }
 
         /// <summary>
@@ -51,6 +57,20 @@ namespace Sculptor.Query
         public static Builder<T> Query(string table)
         {
             return new Builder<T>(table);
+        }
+
+        /// <summary>
+        /// Add an aggregate function to the query.
+        /// </summary>
+        /// <param name="function">The aggregate function to execute on the database.</param>
+        /// <param name="column">The column on which the aggregate function applies.</param>
+        /// <param name="alias">The alias to get the result of the aggregate function.</param>
+        /// <returns>The current query.</returns>
+        public Builder<T> Aggregate(string function, string column, string alias)
+        {
+            Aggregates.Add(new Aggregate(function, column, alias));
+
+            return this;
         }
 
         /// <summary>
@@ -136,7 +156,7 @@ namespace Sculptor.Query
         /// <returns>An instance of the hydrated model.</returns>
         public T First()
         {
-            ResultSet<T> resultSet = Connection.Select<T>(Connection.Grammar.CompileSelect(this.Take(1)), PrepareBindings());
+            ResultSet<T> resultSet = Connection.Select<T>(Connection.Grammar.CompileSelect(Take(1)), PrepareBindings());
 
             if (resultSet.Rows.Count == 0)
                 throw new ModelNotFoundException();
@@ -150,7 +170,7 @@ namespace Sculptor.Query
         /// <returns>An instance of the hydrated model.</returns>
         public async Task<T> FirstAsync()
         {
-            ResultSet<T> resultSet = await Connection.SelectAsync<T>(Connection.Grammar.CompileSelect(this.Take(1)), PrepareBindings());
+            ResultSet<T> resultSet = await Connection.SelectAsync<T>(Connection.Grammar.CompileSelect(Take(1)), PrepareBindings());
 
             if (resultSet.Rows.Count == 0)
                 throw new ModelNotFoundException();
@@ -178,6 +198,28 @@ namespace Sculptor.Query
             ResultSet<T> resultSet = await Connection.SelectAsync<T>(Connection.Grammar.CompileSelect(this), PrepareBindings());
 
             return resultSet.All();
+        }
+
+        /// <summary>
+        /// Execute the query as a "select" statement.
+        /// </summary>
+        /// <returns>A list of result rows.</returns>
+        public List<ResultRow<T>> Raw()
+        {
+            ResultSet<T> resultSet = Connection.Select<T>(Connection.Grammar.CompileSelect(this), PrepareBindings());
+
+            return resultSet.Rows;
+        }
+
+        /// <summary>
+        /// Execute the query asynchronously as a "select" statement.
+        /// </summary>
+        /// <returns>A list of result rows.</returns>
+        public async Task<List<ResultRow<T>>> RawAsync()
+        {
+            ResultSet<T> resultSet = await Connection.SelectAsync<T>(Connection.Grammar.CompileSelect(this), PrepareBindings());
+
+            return resultSet.Rows;
         }
 
         /// <summary>
